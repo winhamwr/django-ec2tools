@@ -5,7 +5,7 @@ def take_snapshot():
     """
     # Read the configurations to create a boto ec2 connection
 
-    # Read the instance.ini config file and create boto ec2 volumes for each
+    # Build boto ec2 volumes for each ebs vol in the config
 
     # Connect to the database using a django cursor
 
