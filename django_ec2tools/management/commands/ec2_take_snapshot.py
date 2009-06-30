@@ -11,15 +11,11 @@ from django_ec2tools.conf.settings import ACCESS_KEY_ID, SECRET_ACCESS_KEY
 
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
-        make_option('--vol-id', '-V', action='store', dest='vol_id',
-                    help='The volume to snapshot. Eg. vol-aaaaaaaa'),
-        make_option('--freeze-dir', '-d', action='store', dest='freeze_dir',
-                    help='The directory that the EBS volume is mounted on'),
         make_option('--lock-db', '-l', default=False, action='store_true',
                     dest='lock_db', help='Lock the db during the snapshot'),
-        make_option('-a', '--access_key',  dest="aws_access_key",
+        make_option('-a', '--access-key',  action="store", dest="aws_access_key",
                     help="AWS Access Key"),
-        make_option('-s', '--secret_key', default=None, dest="aws_secret_key",
+        make_option('-k', '--secret-key', action="store", dest="aws_secret_key",
                  help="AWS Secret Access Key"),
     )
 
@@ -42,11 +38,11 @@ class Command(BaseCommand):
         if len(args) != 2:
             raise CommandError("Both a volume id and a freeze directory are required")
 
-        vol_id = args[1]
-        if vol_id[:3] != 'vol-' or len(vol_id) != 12:
+        vol_id = args[0]
+        if vol_id[:4] != 'vol-' or len(vol_id) != 12:
             raise CommandError("vol-id must be in form vol-aaaaaaaa")
 
-        freeze_dir = args[2]
+        freeze_dir = args[1]
         freeze_dir = os.path.abspath(freeze_dir)
 
         ec2_conn = ec2.EC2Connection(
