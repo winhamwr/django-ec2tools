@@ -9,8 +9,8 @@ from django.core.exceptions import ImproperlyConfigured
 from django_ec2tools.ebs import take_snapshot
 from django_ec2tools.conf.settings import ACCESS_KEY_ID, SECRET_ACCESS_KEY
 
-class Command(LabelCommand):
-    option_list = LabelCommand.option_list + (
+class Command(BaseCommand):
+    option_list = BaseCommand.option_list + (
         make_option('--vol-id', '-V', action='store', dest='vol_id',
                     help='The volume to snapshot. Eg. vol-aaaaaaaa'),
         make_option('--freeze-dir', '-d', action='store', dest='freeze_dir',
