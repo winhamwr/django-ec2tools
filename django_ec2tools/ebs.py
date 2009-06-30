@@ -60,4 +60,4 @@ def take_snapshot(ec2_conn, vol_id, freeze_dir, lock_db=True, fs='xfs'):
     if lock_db:
         cursor.execute('UNLOCK TABLES;')
 
-    logging.info("Created snapshot with id: " % snapshot.id)
+    logging.info("Created snapshot with id: %s" % snapshot.id)
