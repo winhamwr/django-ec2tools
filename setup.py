@@ -1,6 +1,10 @@
 import os
 from distutils.core import setup
  
+f = open('README.txt')
+readme = f.read()
+f.close()
+
 def find_packages(root):
     # so we don't depend on setuptools; from the Storm ORM setup.py
     packages = []
@@ -13,10 +17,11 @@ setup(
     name = 'django-ec2tools',
     version = '0.1dev',
     description = 'Maintenance helpers for your ec2-hosted django installation',
+    long_description=readme,
     author = 'Wes Winham',
     author_email = 'winhamwr@gmail.com',
     license = 'BSD',
-    url = 'http://github.com/winhamwr/django-ec2tools',
+    url = 'http://github.com/winhamwr/django-ec2tools/tree/master',
     classifiers = [
         'Development Status :: 3 - Alpha',
         'Environment :: Web Environment',
