@@ -32,8 +32,8 @@ class Command(BaseCommand):
            not (options.get('aws_access_key', None) and options.get('aws_secret_key', None)):
             raise CommandError("access_key and secret_key required since no aws account info was found in your settings file")
 
-        access_key = options.get('aws_access_key', ACCESS_KEY_ID)
-        secret_key = options.get('aws_secret_key', SECRET_ACCESS_KEY)
+        access_key = options.get('aws_access_key') or ACCESS_KEY_ID
+        secret_key = options.get('aws_secret_key') or SECRET_ACCESS_KEY
 
         if len(args) != 2:
             raise CommandError("Both a volume id and a freeze directory are required")
@@ -48,4 +48,5 @@ class Command(BaseCommand):
         ec2_conn = ec2.EC2Connection(
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key)
+
         take_snapshot(ec2_conn, vol_id, freeze_dir, options['lock_db'])
