@@ -1,25 +1,30 @@
+from subprocess import call
+import logging
 
-def take_snapshot():
+from django.db import connection, transaction
+
+def take_snapshot(ec2_conn, vol_id, freeze_dir, lock_db=True, fs='xfs'):
     """
-    Take a snapshot of all configured EBS volumes.
+    Take a snapshot of the given volume, handling the freezing and unfreezing
+    of the file system and locking and unlocking the db (useful for
+    non-transactional databases like MyISAM mysql).
     """
-    # Read the configurations to create a boto ec2 connection
+    if fs != 'xfs':
+        raise NotImplementedError("Support for snapshots across file systems other than xfs not currently supported")
 
-    # Build boto ec2 volumes for each ebs vol in the config
+    if lock_db:
+        cursor = connection.cursor()
+        cursor.execute('FLUSH TABLES WITH READ LOCK;')
 
-    # Connect to the database using a django cursor
+    # Freeze the xfs file system
+    call(['xfs_freeze', '-f', freeze_dir])
 
-    # For each volume
-        # Flush the tables and grab a READ LOCK
+    snapshot = ec2_conn.create_snapshot(vol_id)
 
-        # Freeze the xfs file system
+    # Unfreeze the xfs file system
+    call(['xfs_freeze', '-u', freeze_dir])
 
-        # Call create_snapshot
+    if lock_db:
+        cursor.execute('UNLOCK TABLES;')
 
-        # Unfreeze the xfs file system
-
-        # Unlock the table
-
-    # Log all fo the snapshot info
-
-    pass
+    logging.info("Created snapshot with id: " % snapshot.id)
