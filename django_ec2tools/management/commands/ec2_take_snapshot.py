@@ -39,8 +39,8 @@ class Command(BaseCommand):
         access_key = options.get('aws_access_key', ACCESS_KEY_ID)
         secret_key = options.get('aws_secret_key', SECRET_ACCESS_KEY)
 
-        if len(args) != 3:
-            raise ComandError("Both a volume id and a freeze directory are required")
+        if len(args) != 2:
+            raise CommandError("Both a volume id and a freeze directory are required")
 
         vol_id = args[1]
         if vol_id[:3] != 'vol-' or len(vol_id) != 12:
