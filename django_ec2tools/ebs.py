@@ -1,7 +1,7 @@
 from subprocess import call
 import logging
 
-from django_ec2tools.conf.settings import DATABASE_BACKUP_PASSWORD, DATABASE_BACKUP_USER
+from django_ec2tools.conf.settings import DATABASE_BACKUP_PASSWORD, DATABASE_BACKUP_USER, XFS_FREEZE_CMD
 from django.conf import settings
 
 def take_snapshot(ec2_conn, vol_id, freeze_dir, lock_db=True, fs='xfs'):
@@ -50,12 +50,12 @@ def take_snapshot(ec2_conn, vol_id, freeze_dir, lock_db=True, fs='xfs'):
         cursor.execute('FLUSH TABLES WITH READ LOCK;')
 
     # Freeze the xfs file system
-    call(['xfs_freeze', '-f', freeze_dir])
+    call([XFS_FREEZE_CMD, '-f', freeze_dir])
 
     snapshot = ec2_conn.create_snapshot(vol_id)
 
     # Unfreeze the xfs file system
-    call(['xfs_freeze', '-u', freeze_dir])
+    call([XFS_FREEZE_CMD, '-u', freeze_dir])
 
     if lock_db:
         cursor.execute('UNLOCK TABLES;')
