@@ -1,5 +1,5 @@
 from optparse import make_option
-import logging, os.path
+import logging, os.path, ConfigParser
 
 from boto import ec2
 
@@ -13,17 +13,28 @@ class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('--lock-db', '-l', default=False, action='store_true',
                     dest='lock_db', help='Lock the db during the snapshot'),
+        make_option('-v', '--volume',  action="store", dest="volume",
+                    help="Volume id (eg. 'vol-fooobarr')"),
+        make_option('-m', '--mountpoint', action="store", dest="mountpoint",
+                    help="Volume mount point (for filesystem freezing)"),
+        make_option('-A', '--all',  action="store_true", dest="snapshot_all",
+                    default=False,
+                    help="Snapshot all volumes contained in the configuration file"),
         make_option('-a', '--access-key',  action="store", dest="aws_access_key",
                     help="AWS Access Key"),
         make_option('-k', '--secret-key', action="store", dest="aws_secret_key",
-                 help="AWS Secret Access Key"),
+                    help="AWS Secret Access Key"),
+        make_option('-c', '--config-file', action="store",
+                    default="~/.ec2tools.ini",
+                    dest="config_file",
+                    help="Path to the .ini configuration file (defaults to ~/.ec2tools.ini)"),
     )
 
     help = """
     Take a snapshot of the EBS volume on this ec2 instance, handling directory
     locking and database locking."""
 
-    args = '[vol-id freeze-dir]'
+    args = '[snapshot]...'
 
     def handle(self, *args, **options):
         logging.basicConfig(level=logging.DEBUG, format="%(message)s")
@@ -35,18 +46,74 @@ class Command(BaseCommand):
         access_key = options.get('aws_access_key') or ACCESS_KEY_ID
         secret_key = options.get('aws_secret_key') or SECRET_ACCESS_KEY
 
-        if len(args) != 2:
-            raise CommandError("Both a volume id and a freeze directory are required")
+        arg_count = len(args)
+        volume = options.get('volume', None)
+        mountpoint = options.get('mountpoint', None)
+        config_file = options.get('config_file')
+        config_file = os.path.join(os.getcwd(), os.path.expanduser(config_file))
 
-        vol_id = args[0]
-        if vol_id[:4] != 'vol-' or len(vol_id) != 12:
-            raise CommandError("vol-id must be in form vol-aaaaaaaa")
+        # Validation
+        # Must have some info
+        if arg_count == 0 and not ( volume and mountpoint ) and not options['snapshot_all']:
+            raise CommandError("Either a snapshot from the config file, a volume and mountpoint or the --all flag must be specified")
 
-        freeze_dir = args[1]
-        freeze_dir = os.path.abspath(freeze_dir)
+        if options.get('snapshot_all', False) and ( arg_count > 0 or volume ):
+            print "--all flag given, so snapshot arguments and --volume options are being ignored"
 
         ec2_conn = ec2.EC2Connection(
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_key)
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key)
 
-        take_snapshot(ec2_conn, vol_id, freeze_dir, options['lock_db'])
+        # If specifying volume, must fully specify
+        if volume or mountpoint:
+            if not volume or not mountpoint:
+                raise CommandError("Both a volume id and a volume mount point directory are required")
+
+            if volume[:4] != 'vol-' or len(volume) != 12:
+                raise CommandError("vol-id must be in form vol-aaaaaaaa")
+
+            freeze_dir = os.path.abspath(mountpoint)
+
+            take_snapshot(ec2_conn, volume, freeze_dir, options['lock_db'])
+        else:
+            config = ConfigParser.ConfigParser()
+            config.read(config_file)
+
+            if options.get('snapshot_all'):
+                # Take a snapshot of everything in our config file
+                try:
+                    aliases = config.options('volume_aliases')
+                except ConfigParser.NoSectionError:
+                    raise CommandError("volume_aliases section not found in config file: %s. Aborting" % config_file)
+                for alias in aliases:
+                    self._snapshot_from_alias(alias, config, ec2_conn)
+            else:
+                for arg in args:
+                    self._snapshot_from_alias(arg, config, ec2_conn)
+
+
+    def _snapshot_from_alias(self, alias, config, ec2_conn):
+        """
+        Take a snapshot based on the alias in the given config file.
+        """
+        try:
+            alias_section = config.get('volume_aliases', alias)
+        except ConfigParser.NoSectionError:
+            raise CommandError("volume_aliases section not found in config file: %s. Aborting" % config_file)
+        except ConfigParser.NoOptionError:
+            print "Volume alias: %s not found. Not snapshotting" % alias
+            return
+
+        try:
+            volume_id = config.get(alias_section, 'volume_id')
+            mountpoint = config.get(alias_section, 'mountpoint')
+        except ConfigParser.NoOptionError:
+            print "Volume alias: %s does not have both a volume_id and mountpoint. Not snapshotting" % alias
+            return
+
+        if config.has_option(alias_section, 'lock_db'):
+            lock_db = config.get(alias_section, 'lock_db')
+        else:
+            lock_db = False
+
+        take_snapshot(ec2_conn, volume_id, mountpoint, lock_db)
