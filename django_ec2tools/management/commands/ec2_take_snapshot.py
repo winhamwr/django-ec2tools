@@ -1,5 +1,5 @@
 from optparse import make_option
-import logging, os.path, ConfigParser
+import logging, os.path, ConfigParser, pickle
 
 from boto import ec2
 
@@ -74,7 +74,10 @@ class Command(BaseCommand):
 
             freeze_dir = os.path.abspath(mountpoint)
 
-            take_snapshot(ec2_conn, volume, freeze_dir, options['lock_db'])
+            snapshot_id = take_snapshot(ec2_conn, volume, freeze_dir, options['lock_db'])
+            output = [('', snapshot_id, volume)]
+            print pickle.dumps(output)
+
         else:
             config = ConfigParser.ConfigParser()
             config.read(config_file)
@@ -85,11 +88,20 @@ class Command(BaseCommand):
                     aliases = config.options('volume_aliases')
                 except ConfigParser.NoSectionError:
                     raise CommandError("volume_aliases section not found in config file: %s. Aborting" % config_file)
+
+                snapshots = []
                 for alias in aliases:
-                    self._snapshot_from_alias(alias, config, ec2_conn)
+                    snapshot_id, volume_id = self._snapshot_from_alias(alias, config, ec2_conn)
+                    snapshots.append((alias, snapshot_id, volume_id))
             else:
+                snapshots = []
                 for arg in args:
-                    self._snapshot_from_alias(arg, config, ec2_conn)
+                    snapshot_id, volume_id = self._snapshot_from_alias(arg, config, ec2_conn)
+                    snapshots.append((alias, snapshot_id, volume_id))
+
+
+            # Output the snapshot results
+            print pickle.dumps(snapshots)
 
 
     def _snapshot_from_alias(self, alias, config, ec2_conn):
@@ -116,4 +128,6 @@ class Command(BaseCommand):
         else:
             lock_db = False
 
-        take_snapshot(ec2_conn, volume_id, mountpoint, lock_db)
+        snapshot_id = take_snapshot(ec2_conn, volume_id, mountpoint, lock_db)
+
+        return (volume_id, snapshot_id)
