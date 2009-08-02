@@ -28,16 +28,19 @@ class Command(BaseCommand):
                     default="~/.ec2tools.ini",
                     dest="config_file",
                     help="Path to the .ini configuration file (defaults to ~/.ec2tools.ini)"),
+        make_option('-o', '--pickled-output', action="store_true", default=False,
+                    dest="pickled_output",
+                    help="Output snapshot information in pickled python format. Uses the form [(alias1, snapshot_id1, volume_id1),(alias2, snapshot_id2, volume_id2)...]"),
     )
 
     help = """
     Take a snapshot of the EBS volume on this ec2 instance, handling directory
     locking and database locking."""
 
-    args = '[snapshot]...'
+    args = '[snapshot_alias]...'
 
     def handle(self, *args, **options):
-        logging.basicConfig(level=logging.DEBUG, format="%(message)s")
+        logging.basicConfig(level=logging.ERROR, format="%(message)s")
 
         if not (ACCESS_KEY_ID and SECRET_ACCESS_KEY) and \
            not (options.get('aws_access_key', None) and options.get('aws_secret_key', None)):
@@ -49,6 +52,8 @@ class Command(BaseCommand):
         arg_count = len(args)
         volume = options.get('volume', None)
         mountpoint = options.get('mountpoint', None)
+        pickled_output = options.get('pickled_output')
+
         config_file = options.get('config_file')
         config_file = os.path.join(os.getcwd(), os.path.expanduser(config_file))
 
@@ -58,7 +63,7 @@ class Command(BaseCommand):
             raise CommandError("Either a snapshot from the config file, a volume and mountpoint or the --all flag must be specified")
 
         if options.get('snapshot_all', False) and ( arg_count > 0 or volume ):
-            print "--all flag given, so snapshot arguments and --volume options are being ignored"
+            logging.warn("--all flag given, so snapshot arguments and --volume options are being ignored")
 
         ec2_conn = ec2.EC2Connection(
                 aws_access_key_id=access_key,
@@ -76,7 +81,8 @@ class Command(BaseCommand):
 
             snapshot_id = take_snapshot(ec2_conn, volume, freeze_dir, options['lock_db'])
             output = [('', snapshot_id, volume)]
-            print pickle.dumps(output)
+            if pickled_output:
+                print pickle.dumps(output)
 
         else:
             config = ConfigParser.ConfigParser()
@@ -100,8 +106,9 @@ class Command(BaseCommand):
                     snapshots.append((alias, snapshot_id, volume_id))
 
 
-            # Output the snapshot results
-            print pickle.dumps(snapshots)
+            if pickled_output:
+                # Output the snapshot results
+                print pickle.dumps(snapshots)
 
 
     def _snapshot_from_alias(self, alias, config, ec2_conn):
@@ -113,14 +120,14 @@ class Command(BaseCommand):
         except ConfigParser.NoSectionError:
             raise CommandError("volume_aliases section not found in config file: %s. Aborting" % config_file)
         except ConfigParser.NoOptionError:
-            print "Volume alias: %s not found. Not snapshotting" % alias
+            logging.warn("Volume alias: %s not found. Not snapshotting" % alias)
             return
 
         try:
             volume_id = config.get(alias_section, 'volume_id')
             mountpoint = config.get(alias_section, 'mountpoint')
         except ConfigParser.NoOptionError:
-            print "Volume alias: %s does not have both a volume_id and mountpoint. Not snapshotting" % alias
+            logging.warn("Volume alias: %s does not have both a volume_id and mountpoint. Not snapshotting" % alias)
             return
 
         if config.has_option(alias_section, 'lock_db'):
