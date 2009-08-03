@@ -114,6 +114,7 @@ class Command(BaseCommand):
     def _snapshot_from_alias(self, alias, config, ec2_conn):
         """
         Take a snapshot based on the alias in the given config file.
+        Returns a tuple of the (snapshot_id, volume_id)
         """
         try:
             alias_section = config.get('volume_aliases', alias)
@@ -137,4 +138,4 @@ class Command(BaseCommand):
 
         snapshot_id = take_snapshot(ec2_conn, volume_id, mountpoint, lock_db)
 
-        return (volume_id, snapshot_id)
+        return (snapshot_id, volume_id)

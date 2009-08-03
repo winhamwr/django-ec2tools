@@ -32,10 +32,9 @@ Take a snapshot of the volume named `db` from your ~/.ec2tools.ini config file (
 Configuration File
 ------------------
 
-To keep from repeating yourself and from needing to remember your volume id every time you want to do a backup, you can use a configuration file to set up aliases for your volumes. This file should be located in your HOME directory and named `.ec2tools.ini`
+To eliminate repetition and the need to locate volume ids every backup, you can use a configuration file to set up aliases for your volumes. This file should be located in your HOME directory and named `.ec2tools.ini`
 
-### Example config file::
-
+### Example `~/.ec2tools.ini` file::
   [volume_aliases]
   db = db
   fs = fs
