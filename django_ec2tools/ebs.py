@@ -52,7 +52,11 @@ def take_snapshot(ec2_conn, vol_id, freeze_dir, lock_db=True, fs='xfs'):
     # Freeze the xfs file system
     call([XFS_FREEZE_CMD, '-f', freeze_dir])
 
-    snapshot = ec2_conn.create_snapshot(vol_id)
+    try:
+        snapshot = ec2_conn.create_snapshot(vol_id)
+    finally:
+        # Unfreeze the xfs file system even if our snapshot threw an error
+        call([XFS_FREEZE_CMD, '-u', freeze_dir])
 
     # Unfreeze the xfs file system
     call([XFS_FREEZE_CMD, '-u', freeze_dir])
