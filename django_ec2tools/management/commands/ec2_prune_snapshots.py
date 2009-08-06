@@ -132,7 +132,7 @@ class Command(BaseCommand):
 
     def _build_strategy(self, strategy, prune_strategy_module):
         try:
-            strat_module = __import__(prune_strategy_module)
+            strat_module = my_import(prune_strategy_module)
         except ImportError:
             raise ImproperlyConfigured("The module for importing pruning \
             strategies was not found. Please ensure that django_ec2tools is on \
@@ -142,8 +142,7 @@ class Command(BaseCommand):
         try:
             strat_callable = getattr(strat_module, strategy)
         except AttributeError:
-            raise CommandError("The given strategy was not found in the \
-            strategy module. \
+            raise CommandError("The given strategy was not found in the strategy module. \
             Strategy: [%s]. Module: [%s]" % (strategy, prune_strategy_module))
         if not callable(strat_callable):
             raise CommandError("The given strategy is not a callable. \
@@ -177,3 +176,12 @@ class Command(BaseCommand):
         snapshot_id = take_snapshot(ec2_conn, volume_id, mountpoint, lock_db)
 
         return (snapshot_id, volume_id)
+
+# From http://stackoverflow.com/questions/211100/pythons-import-doesnt-work-as-expected
+# @author dwestbrook
+def my_import(name):
+    mod = __import__(name)
+    components = name.split('.')
+    for comp in components[1:]:
+        mod = getattr(mod, comp)
+    return mod

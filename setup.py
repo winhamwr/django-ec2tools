@@ -15,7 +15,7 @@ def find_packages(root):
 
 setup(
     name = 'django-ec2tools',
-    version = '0.2dev',
+    version = '0.2',
     description = 'Maintenance helpers for your ec2-hosted django installation',
     long_description=readme,
     author = 'Wes Winham',

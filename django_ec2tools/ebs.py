@@ -83,7 +83,7 @@ def prune_snapshots(ec2_conn, vol_id, should_prune):
 
     pruned_snapshots = 0
     for snapshot in all_snapshots:
-        if should_prune(snapshot, vol_id):
+        if should_prune(ec2_conn, snapshot, vol_id):
             logging.info("Deleting snapshot with id: %s" % snapshot.id)
             snapshot.delete()
             pruned_snapshots += 1
