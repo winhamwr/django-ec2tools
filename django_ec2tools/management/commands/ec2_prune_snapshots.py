@@ -43,7 +43,6 @@ class Command(BaseCommand):
     args = '[volume_id]...'
 
     def handle(self, *args, **options):
-
         if not (ACCESS_KEY_ID and SECRET_ACCESS_KEY) and \
            not (options.get('aws_access_key', None) and options.get('aws_secret_key', None)):
             raise CommandError("access_key and secret_key required since no aws account info was found in your settings file")

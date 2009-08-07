@@ -89,3 +89,11 @@ def prune_snapshots(ec2_conn, vol_id, should_prune):
             pruned_snapshots += 1
 
     return pruned_snapshots
+
+def get_num_snapshots(ec2_conn):
+    """
+    Get the total number of snapshots that exist on this account.
+    """
+    all_snapshots = ec2_conn.get_all_snapshots()
+
+    return len(all_snapshots)
