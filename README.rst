@@ -6,10 +6,11 @@ Django ec2tools is a set of management commands designed to help running Django 
 Installation
 ------------
 
-  * Put django-ec2tools on your python path (you're using pip + virtualenv, so that's easy, right?).::
+ * Put django-ec2tools on your python path (you're using pip + virtualenv, so that's easy, right?). ::
+
       pip install -e git+git://github.com/winhamwr/django-ec2tools.git#egg=django-ec2tools
 
-  * Put django_ec2tools in your INSTALLED_APPS list
+ * Put django_ec2tools in your INSTALLED_APPS list
 
 Optionally:
   * Add AWS access and secret keys to your settings file as EC2_AWS_ACCESS_KEY and EC2_AWS_SECRET_KEY respectively. This makes it possible to run commands without including that information on the command line.
@@ -21,19 +22,23 @@ Usage
 Taking a Snapshot of your mounted EBS volume
 ############################################
 
-Take a snapshot of the XFS-formatted EBS volume containing your database (locking the database to ensure data integrity for your MyISAM tables).::
+Take a snapshot of the XFS-formatted EBS volume containing your database (locking the database to ensure data integrity for your MyISAM tables). ::
+
   manage.py ec2_take_snapshot -v vol-fooobarr -m /vol/mount/point/db --lock-db --access-key aaa --secret-key aaa
 
-Take a snapshot of the volume named `db` from your ~/.ec2tools.ini config file (and your aws keys in your settings file)::
+Take a snapshot of the volume named `db` from your ~/.ec2tools.ini config file (and your aws keys in your settings file) ::
+
   manage.py ec2_take_snapshot db
 
 Pruning your snapshots
 ######################
 
-Prune snapshots for a particular volume based on the default pruning strategy (Keep anything younger than 2 days)
+Prune snapshots for a particular volume based on the default pruning strategy (Keep anything younger than 2 days) ::
+
   manage.py ec2_prune_snapshots vol-fooobarr
 
-Prune snapshots for all volumes in your configuration file based on a custom strategy you wrote.
+Prune snapshots for all volumes in your configuration file based on a custom strategy you wrote. ::
+
   manage.py ec2_prune_snapshots --all --strategy alternating_weekends --strategy-module my_proj.core.pruning_strategy
 
 Default Pruning Strategy
@@ -45,6 +50,15 @@ The default pruning strategy deletes snapshots more than 2 days old. You can con
  3. In your `~/.ec2tools.ini` set a strategy option in a volume's section
  4. In your '~/.ec2tools.ini` set a strategy option in the [defaults] (not [DEFAULT]) section.
 
+Checking your snapshot count
+############################
+
+At one point, I didn't realize that there was a 500 snapshot limit per AWS account, and after hitting that limit, my backups weren't completing (this spurred the creation of the ec2_prune_snapshots command). This command checks the number of snapshots you have versus a threshold (defaults to 400) and warns you via email if you're above the threshold. ::
+
+  manage.py ec2_check_snapshot_limit --threshold 450
+
+Note: The emails are sent based on the settings.MANAGERS tuple in your project (which is usually the same as settings.ADMINS).
+
 Configuration File
 ------------------
 
@@ -53,7 +67,8 @@ To eliminate repetition and the need to locate volume ids every backup, you can 
 Example
 #######
 
-`~/.ec2tools.ini` file::
+`~/.ec2tools.ini` file ::
+
   [defaults]
   strategy = oneday_rolling
 
