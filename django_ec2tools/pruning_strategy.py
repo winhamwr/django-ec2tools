@@ -1,6 +1,9 @@
 import datetime
 
 def parse_ts(ts):
+    """
+    Parses an ec2 date string (eg. snapshot.start_time) as a datetime object.
+    """
     return datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.000Z')
 
 class PruneStrategyBase(object):
@@ -49,14 +52,13 @@ class PruneByAgeWithParent(PruneByAge):
         if should_prune:
             # If we already should prune it, don't worry about parents
             return True
-        else:
-            # If the snapshots if from a parent vol, maybe we should prune it
-            parent = self._get_parent(ec2_conn, pruning_vol_id)
-            if parent:
-                if parent.snapshot_id:
-                    # Only delete parents who have parents themselves
-                    return super(PruneByAgeWithParent, self)._should_prune(
-                        ec2_conn, snapshot, parent.id)
+
+        # If the snapshots is from a parent vol, maybe we should prune it
+        parent = self._get_parent(ec2_conn, pruning_vol_id)
+        if parent and parent.snapshot_id:
+                # Only delete parents who have parents themselves
+                return super(PruneByAgeWithParent, self)._should_prune(
+                    ec2_conn, snapshot, parent.id)
 
     def _get_parent(self, ec2_conn, volume_id):
         volume = ec2_conn.get_all_volumes([volume_id])[0]

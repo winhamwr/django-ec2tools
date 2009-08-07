@@ -51,7 +51,6 @@ class Command(BaseCommand):
         access_key = options.get('aws_access_key') or ACCESS_KEY_ID
         secret_key = options.get('aws_secret_key') or SECRET_ACCESS_KEY
 
-        arg_count = len(args)
         volume_id = options.get('volume', None)
         strategy = options.get('strategy', None)
         verbose = options.get('verbose')
@@ -78,7 +77,7 @@ class Command(BaseCommand):
 
         # Validation
         # Must have some info
-        if not ( volumes ) and not options['all_volumes']:
+        if not volumes and not options['all_volumes']:
             raise CommandError("Either volumes or the --all flag must be specified")
 
         ec2_conn = boto.ec2.EC2Connection(
@@ -87,11 +86,9 @@ class Command(BaseCommand):
 
 
         pruned_count = 0 # Number of snapshots removed
-        if volumes:
-            for volume in volumes:
-                if volume[:4] != 'vol-' or len(volume) != 12:
-                    raise CommandError("vol-id must be in form vol-aaaaaaaa. Error: [%s]" % volume)
-
+        for volume in volumes:
+            if volume[:4] != 'vol-' or len(volume) != 12:
+                raise CommandError("vol-id must be in form vol-aaaaaaaa. Error: [%s]" % volume)
             try:
                 pruned_count += prune_snapshots(ec2_conn, volume, strategy)
             except EC2ResponseError, e:
