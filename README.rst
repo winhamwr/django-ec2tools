@@ -1,16 +1,16 @@
 django-ec2tools
 ===============
 
-Django ec2tools is a set of management commands designed to help running Django on an Amazon EC2 instance using EBS and all of that good stuff. This currently consists of a management command for taking snapshots of your EBS volumes for backup purposes and a command to prune your snapshots based on a flexible retention/pruning strategy.
+Django ec2tools is a set of management commands designed to making it easier to run Django on an Amazon EC2 instance using EBS and all of that good stuff. This currently consists of a management command for taking snapshots of your EBS volumes for backup purposes, a command to prune your snapshots based on a flexible retention/pruning strategy and a command to warn you via email if you cross a certain threshold number of snapshots on your way to the 500 snapshot limit.
 
 Installation
 ------------
 
- * Put django-ec2tools on your python path (you're using pip + virtualenv, so that's easy, right?). ::
+* Put django-ec2tools on your python path (you're using pip + virtualenv, so that's easy, right?). ::
 
-      pip install -e git+git://github.com/winhamwr/django-ec2tools.git#egg=django-ec2tools
+    pip install -e git+git://github.com/winhamwr/django-ec2tools.git#egg=django-ec2tools
 
- * Put django_ec2tools in your INSTALLED_APPS list
+* Put django_ec2tools in your INSTALLED_APPS list
 
 Optionally:
   * Add AWS access and secret keys to your settings file as EC2_AWS_ACCESS_KEY and EC2_AWS_SECRET_KEY respectively. This makes it possible to run commands without including that information on the command line.
@@ -53,7 +53,7 @@ The default pruning strategy deletes snapshots more than 2 days old. You can con
 Checking your snapshot count
 ############################
 
-At one point, I didn't realize that there was a 500 snapshot limit per AWS account, and after hitting that limit, my backups weren't completing (this spurred the creation of the ec2_prune_snapshots command). This command checks the number of snapshots you have versus a threshold (defaults to 400) and warns you via email if you're above the threshold. ::
+At one point, I didn't realize that there was a 500 snapshot limit per AWS account, and after hitting that limit, my backups weren't completing (this spurred the creation of the ec2_prune_snapshots command). This command checks the number of snapshots you have versus a threshold (defaults to 400) and warns you via email if you're above the threshold. This should probably be ran at least daily via cron. ::
 
   manage.py ec2_check_snapshot_limit --threshold 450
 
@@ -87,19 +87,13 @@ Example
   strategy = oneweek_rolling
 
 volume_aliases
-##############
-
-This section contains variables with an alias name and then a section name representing volume alias definitions. The command line refers to the alias name (not the section name), but you should probably keep them the same to save yourself some hassle.
+  This section contains variables with an alias name and then a section name representing volume alias definitions. The command line refers to the alias name (not the section name), but you should probably keep them the same to save yourself some hassle.
 
 Volume alias sections
-#####################
-
-Each section must define a volume_id and a mountpoint. If `lock_db` isn't defined, then it defaults to False.
+  Each section must define a volume_id and a mountpoint. If `lock_db` isn't defined, then it defaults to False.
 
 strategy
-########
-
-In each volume section, you can define a strategy to use just for that volume. You can also define a default strategy in [defaults] that will apply to every volume that doesn't have a strategy defined. Be advised though, that entering a strategy on the command line overrides the config file settings.
+  In each volume section, you can define a strategy to use just for that volume. You can also define a default strategy in [defaults] that will apply to every volume that doesn't have a strategy defined. Be advised though, that entering a strategy on the command line overrides the config file settings.
 
 Writing Custom Pruning Strategies
 ---------------------------------
