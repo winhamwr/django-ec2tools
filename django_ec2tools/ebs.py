@@ -47,24 +47,22 @@ def take_snapshot(ec2_conn, vol_id, freeze_dir, lock_db=True, fs='xfs'):
             settings.DATABASE_USER = prev_user
             settings.DATABASE_PASSWORD = prev_pw
 
-
-        cursor = connection.cursor()
-        cursor.execute('FLUSH TABLES WITH READ LOCK;')
-
-    # Freeze the xfs file system
-    call([XFS_FREEZE_CMD, '-f', freeze_dir])
-
     try:
+        if lock_db:
+            cursor = connection.cursor()
+            cursor.execute('FLUSH TABLES WITH READ LOCK;')
+
+        # Freeze the xfs file system
+        call([XFS_FREEZE_CMD, '-f', freeze_dir])
+
         snapshot = ec2_conn.create_snapshot(vol_id)
     finally:
         # Unfreeze the xfs file system even if our snapshot threw an error
         call([XFS_FREEZE_CMD, '-u', freeze_dir])
 
-    # Unfreeze the xfs file system
-    call([XFS_FREEZE_CMD, '-u', freeze_dir])
+        if lock_db:
+            cursor.execute('UNLOCK TABLES;')
 
-    if lock_db:
-        cursor.execute('UNLOCK TABLES;')
 
     logging.info("Created snapshot with id: %s" % snapshot.id)
 
