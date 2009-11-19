@@ -15,7 +15,7 @@ def find_packages(root):
 
 setup(
     name = 'django-ec2tools',
-    version = '0.3dev',
+    version = '0.3',
     description = 'Maintenance helpers for your ec2-hosted django installation',
     long_description=readme,
     author = 'Wes Winham',
@@ -23,7 +23,7 @@ setup(
     license = 'BSD',
     url = 'http://github.com/winhamwr/django-ec2tools/tree/master',
     classifiers = [
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
         'Framework :: Django',
         'Intended Audience :: Developers',

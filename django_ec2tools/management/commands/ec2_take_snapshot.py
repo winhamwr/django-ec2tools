@@ -13,7 +13,7 @@ class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('--lock-db', '-l', default=False, action='store_true',
                     dest='lock_db', help='Lock the db during the snapshot'),
-        make_option('-v', '--volume',  action="store", dest="volume",
+        make_option('-V', '--volume',  action="store", dest="volume",
                     help="Volume id (eg. 'vol-fooobarr')"),
         make_option('-m', '--mountpoint', action="store", dest="mountpoint",
                     help="Volume mount point (for filesystem freezing)"),

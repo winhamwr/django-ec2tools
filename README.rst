@@ -24,7 +24,7 @@ Taking a Snapshot of your mounted EBS volume
 
 Take a snapshot of the XFS-formatted EBS volume containing your database (locking the database to ensure data integrity for your MyISAM tables). ::
 
-  manage.py ec2_take_snapshot -v vol-fooobarr -m /vol/mount/point/db --lock-db --access-key aaa --secret-key aaa
+  manage.py ec2_take_snapshot --volume vol-fooobarr -m /vol/mount/point/db --lock-db --access-key aaa --secret-key aaa
 
 Take a snapshot of the volume named `db` from your ~/.ec2tools.ini config file (and your aws keys in your settings file) ::
 
@@ -101,11 +101,6 @@ Writing Custom Pruning Strategies
 A pruning strategy is just a callable that takes a boto ec2.EC2Connection, a boto snapshot object and the volume_id of the volume that's being pruned and then returns True to delete/prune it or False to keep it. To that end, you can just write any old function that fullfils those requirements and call it your strategy. Alternatively, you can subclass PruneStrategyBase and write a _should_prune(self, ec2_conn, snapshot, pruning_vol_id) method. This is only really useful if you want to do something like PruneByAge where you can write one class and then customize it based on how you initialize it. The class-based approache is also nice for things like PruneByAgeWithParents where you can use inheritance keep some things DRY.
 
 See `django_ec2tools.pruning_strategy` for examples.
-
-Django 1.1 Note
----------------
-
-This *should* work with django 1.1, but it's untested. The bit that will break is the database connection switching for your DATABASE_BACKUP_USER, as the internals that I had to much with there changed between 1.0.2 and 1.1 (they're much nicer in 1.1).
 
 
 Also, thanks to Django-filter for letting me rip off all of their project cruft stuff :)
