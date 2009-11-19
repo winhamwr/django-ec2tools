@@ -1,7 +1,7 @@
 import os
 from distutils.core import setup
- 
-f = open('README.txt')
+
+f = open('README.rst')
 readme = f.read()
 f.close()
 
@@ -12,10 +12,10 @@ def find_packages(root):
         if '__init__.py' in files:
             packages.append(directory.replace(os.sep, '.'))
     return packages
- 
+
 setup(
     name = 'django-ec2tools',
-    version = '0.1dev',
+    version = '0.3dev',
     description = 'Maintenance helpers for your ec2-hosted django installation',
     long_description=readme,
     author = 'Wes Winham',

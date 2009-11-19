@@ -1,8 +1,10 @@
 from subprocess import call
-import logging
+import logging, datetime
 
-from django_ec2tools.conf.settings import DATABASE_BACKUP_PASSWORD, DATABASE_BACKUP_USER, XFS_FREEZE_CMD
 from django.conf import settings
+
+from django_ec2tools.conf.settings import DATABASE_BACKUP_PASSWORD, DATABASE_BACKUP_USER, XFS_FREEZE_CMD, MAX_SNAPSHOT_AGE
+from pruning_strategy import PruneByAge
 
 def take_snapshot(ec2_conn, vol_id, freeze_dir, lock_db=True, fs='xfs'):
     """
@@ -45,22 +47,48 @@ def take_snapshot(ec2_conn, vol_id, freeze_dir, lock_db=True, fs='xfs'):
             settings.DATABASE_USER = prev_user
             settings.DATABASE_PASSWORD = prev_pw
 
-
-        cursor = connection.cursor()
-        cursor.execute('FLUSH TABLES WITH READ LOCK;')
-
-    # Freeze the xfs file system
-    call([XFS_FREEZE_CMD, '-f', freeze_dir])
-
     try:
+        if lock_db:
+            cursor = connection.cursor()
+            cursor.execute('FLUSH TABLES WITH READ LOCK;')
+
+        # Freeze the xfs file system
+        call([XFS_FREEZE_CMD, '-f', freeze_dir])
+
         snapshot = ec2_conn.create_snapshot(vol_id)
-    except:
-        logging.critical("Error creating snapshot")
+    finally:
+        # Unfreeze the xfs file system even if our snapshot threw an error
+        call([XFS_FREEZE_CMD, '-u', freeze_dir])
 
-    # Unfreeze the xfs file system
-    call([XFS_FREEZE_CMD, '-u', freeze_dir])
-
-    if lock_db:
-        cursor.execute('UNLOCK TABLES;')
 
     logging.info("Created snapshot with id: %s" % snapshot.id)
+
+    return snapshot.id
+
+def prune_snapshots(ec2_conn, vol_id, should_prune):
+    """
+    Prune the given volume's snapshots according to the pruning strategy.
+    Return the number of snapshots deleted.
+    """
+
+    all_snapshots = ec2_conn.get_all_snapshots()
+
+    vols_snapshots = filter(lambda x: x.volume_id == vol_id, all_snapshots)
+    logging.info("volume: [%s] has [%s] snapshots" % (vol_id, len(vols_snapshots)))
+
+    pruned_snapshots = 0
+    for snapshot in all_snapshots:
+        if should_prune(ec2_conn, snapshot, vol_id):
+            logging.info("Deleting snapshot with id: %s" % snapshot.id)
+            snapshot.delete()
+            pruned_snapshots += 1
+
+    return pruned_snapshots
+
+def get_num_snapshots(ec2_conn):
+    """
+    Get the total number of snapshots that exist on this account.
+    """
+    all_snapshots = ec2_conn.get_all_snapshots()
+
+    return len(all_snapshots)
