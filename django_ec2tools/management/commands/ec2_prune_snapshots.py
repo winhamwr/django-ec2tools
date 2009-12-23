@@ -14,7 +14,7 @@ CONNECTION_ERROR_MSG = """The connection to AWS failed. Please check your networ
                     Error: %s"""
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
-        make_option('-V', '--volume',  action="store", dest="volume",
+        make_option('-v', '--volume',  action="store", dest="volume",
                     help="Volume whose snapshots to prune (eg. 'vol-fooobarr')"),
         make_option('-s', '--strategy',  action="store", dest="strategy",
                     help="Pruning strategy. eg. 'rolling_2day'"),
