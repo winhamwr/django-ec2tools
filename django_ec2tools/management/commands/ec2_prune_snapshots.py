@@ -14,7 +14,7 @@ CONNECTION_ERROR_MSG = """The connection to AWS failed. Please check your networ
                     Error: %s"""
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
-        make_option('-v', '--volume',  action="store", dest="volume",
+        make_option('-V', '--volume',  action="store", dest="volume",
                     help="Volume whose snapshots to prune (eg. 'vol-fooobarr')"),
         make_option('-s', '--strategy',  action="store", dest="strategy",
                     help="Pruning strategy. eg. 'rolling_2day'"),
@@ -32,8 +32,6 @@ class Command(BaseCommand):
                     default="~/.ec2tools.ini",
                     dest="config_file",
                     help="Path to the .ini configuration file (defaults to ~/.ec2tools.ini)"),
-        make_option('-V', '--verbose', action="store_true", dest="verbose", default=False,
-                    help="Increase verbosity"),
     )
 
     help = """
