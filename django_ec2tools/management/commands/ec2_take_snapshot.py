@@ -103,7 +103,7 @@ class Command(BaseCommand):
                 snapshots = []
                 for arg in args:
                     snapshot_id, volume_id = self._snapshot_from_alias(arg, config, ec2_conn)
-                    snapshots.append((alias, snapshot_id, volume_id))
+                    snapshots.append((arg, snapshot_id, volume_id))
 
 
             if pickled_output:
